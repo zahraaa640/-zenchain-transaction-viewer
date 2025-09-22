@@ -2,17 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ZenChain Transaction Viewer</title>
+  <title>ZenChain Testnet DApp</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
 </head>
 <body>
-  <h1>ZenChain Transaction Viewer</h1>
-  <p>Enter your wallet address to see recent transactions:</p>
+  <h1>ZenChain Testnet - Simple DApp</h1>
+  
+  <button onclick="connectWallet()">Connect Wallet</button>
+  <p id="walletAddress">Wallet: Not connected</p>
+  <p id="balance">Balance: 0 ZTC</p> <!-- Balance display -->
 
-  <input type="text" id="walletInput" placeholder="Enter wallet address">
-  <button onclick="getTransactions()">Check Transactions</button>
+  <h3>Send Transaction</h3>
+  <input type="text" id="toAddress" placeholder="Recipient address">
+  <input type="text" id="amount" placeholder="Amount (ZTC)">
+  <button onclick="sendTransaction()">Send</button>
 
-  <div id="result"></div>
+  <p id="status"></p>
 
   <script src="app.js"></script>
 </body>
