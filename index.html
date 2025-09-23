@@ -1,24 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>ZenChain Testnet DApp</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <title>ZenChain Micro Payments (Testnet)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
 </head>
 <body>
-  <h1>ZenChain Testnet - Simple DApp</h1>
-  
-  <button onclick="connectWallet()">Connect Wallet</button>
-  <p id="walletAddress">Wallet: Not connected</p>
-  <p id="balance">Balance: 0 ZTC</p> <!-- Balance display -->
+  <div class="container">
+    <h1>ZenChain Micro Payments (Testnet)</h1>
 
-  <h3>Send Transaction</h3>
-  <input type="text" id="toAddress" placeholder="Recipient address">
-  <input type="text" id="amount" placeholder="Amount (ZTC)">
-  <button onclick="sendTransaction()">Send</button>
+    <div class="wallet-row">
+      <button id="connectBtn">Connect Wallet</button>
+      <div class="wallet-info">
+        <p id="walletAddress">Wallet: Not connected</p>
+        <p id="balance">Balance: -</p>
+      </div>
+    </div>
 
-  <p id="status"></p>
+    <section class="send-box">
+      <h2>Send Micro Payment</h2>
+      <label>Recipient address</label>
+      <input type="text" id="toAddress" placeholder="0x..." />
+      <label>Amount (ZTC)</label>
+      <input type="text" id="amount" placeholder="e.g. 0.001" />
+      <div class="small-note">Tip: keep amount small (micro payments)</div>
+      <button id="sendBtn">Send Payment</button>
+      <p id="status" class="status"></p>
+    </section>
+
+    <section class="history-box">
+      <h2>Transaction History (local)</h2>
+      <div class="history-controls">
+        <button id="refreshBtn">Refresh Status</button>
+        <button id="clearBtn">Clear Local History</button>
+      </div>
+      <table id="historyTable">
+        <thead>
+          <tr><th>Time</th><th>To</th><th>Amount (ZTC)</th><th>Tx Hash</th><th>Status</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="note">
+        History is kept in your browser (localStorage). You can view details on a block explorer if available.
+      </div>
+    </section>
+
+    <footer>
+      <small>ZenChain Testnet — RPC: <code>https://zenchain-testnet.api.onfinality.io/public</code></small>
+    </footer>
+  </div>
 
   <script src="app.js"></script>
 </body>
