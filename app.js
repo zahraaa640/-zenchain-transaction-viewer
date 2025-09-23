@@ -1,7 +1,3 @@
-// ---------------------------
-// ZenArt – Connect to ZenChain Testnet
-// ---------------------------
-
 let contract;
 let signer;
 
@@ -14,8 +10,8 @@ const network = {
   blockExplorerUrls: []
 };
 
-// Replace with your deployed contract address
-const contractAddress = "0xYourContractAddressHere";
+// Replace this with your actual deployed contract address
+const contractAddress = "0xYourDeployedContractAddressHere";
 
 // ZenArt contract ABI
 const contractABI = [
@@ -65,9 +61,7 @@ const contractABI = [
   }
 ];
 
-// ---------------------------
-// Connect to MetaMask and network
-// ---------------------------
+// Connect to MetaMask and ZenChain Testnet
 document.getElementById("connectWallet").onclick = async () => {
   if (!window.ethereum) {
     alert("Please install MetaMask!");
@@ -75,16 +69,13 @@ document.getElementById("connectWallet").onclick = async () => {
   }
 
   try {
-    // Request account access
     await ethereum.request({ method: 'eth_requestAccounts' });
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     signer = provider.getSigner();
 
-    // Check current network
     const chainId = await ethereum.request({ method: 'eth_chainId' });
     if (chainId !== network.chainId) {
       try {
-        // Add ZenChain Testnet if not present
         await ethereum.request({
           method: 'wallet_addEthereumChain',
           params: [network]
@@ -104,9 +95,7 @@ document.getElementById("connectWallet").onclick = async () => {
   }
 };
 
-// ---------------------------
-// Register new artwork
-// ---------------------------
+// Register artwork
 document.getElementById("artForm").onsubmit = async (e) => {
   e.preventDefault();
   const title = document.getElementById("title").value;
@@ -125,9 +114,7 @@ document.getElementById("artForm").onsubmit = async (e) => {
   }
 };
 
-// ---------------------------
-// Like an artwork
-// ---------------------------
+// Like artwork
 async function likeArtwork(id) {
   try {
     const tx = await contract.likeArtwork(id);
@@ -140,9 +127,7 @@ async function likeArtwork(id) {
   }
 }
 
-// ---------------------------
 // Load artworks and chart
-// ---------------------------
 async function loadArtworks() {
   const artworksDiv = document.getElementById("artworks");
   artworksDiv.innerHTML = "";
