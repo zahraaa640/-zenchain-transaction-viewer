@@ -1,342 +1,184 @@
-/* app.js - ZenChain Micro Payment DApp (Testnet)
-   - auto-switch/add ZenChain Testnet in MetaMask
-   - connect wallet, show balance
-   - send micro payment (signer.sendTransaction)
-   - save history in localStorage and poll status
-*/
+// ---------------------------
+// ZenArt – Connect to ZenChain Testnet
+// ---------------------------
 
-let provider;
+let contract;
 let signer;
 
-const STORAGE_KEY = "zenchain_micro_history_v1";
-
-// ZenChain Testnet params
-const ZENCHAIN_PARAMS = {
-  chainId: "0x20E8", // 8408 decimal -> 0x20E8 hex
-  chainName: "ZenChain Testnet",
-  nativeCurrency: { name: "ZenChain Test Coin", symbol: "ZTC", decimals: 18 },
-  rpcUrls: ["https://zenchain-testnet.api.onfinality.io/public"],
-  blockExplorerUrls: [] // add explorer if available
+// ZenChain Testnet network info
+const network = {
+  chainId: '0x2098', // 8408 in hex
+  chainName: 'ZenChain Testnet',
+  nativeCurrency: { name: 'ZenChain Token', symbol: 'ZTC', decimals: 18 },
+  rpcUrls: ['https://zenchain-testnet.api.onfinality.io/public'],
+  blockExplorerUrls: []
 };
 
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("connectBtn").addEventListener("click", connectWallet);
-  document.getElementById("sendBtn").addEventListener("click", sendTransaction);
-  document.getElementById("refreshBtn").addEventListener("click", refreshAllStatuses);
-  document.getElementById("clearBtn").addEventListener("click", clearLocalHistory);
+// Replace with your deployed contract address
+const contractAddress = "0xYourContractAddressHere";
 
-  loadHistoryToTable();
-  // start polling every 8 seconds to update pending tx statuses
-  setInterval(pollPendingTransactions, 8000);
-});
+// ZenArt contract ABI
+const contractABI = [
+  {
+    "inputs":[
+      {"internalType":"string","name":"_title","type":"string"},
+      {"internalType":"string","name":"_artist","type":"string"},
+      {"internalType":"string","name":"_description","type":"string"},
+      {"internalType":"string","name":"_imageHash","type":"string"}
+    ],
+    "name":"createArtwork",
+    "outputs":[],
+    "stateMutability":"nonpayable",
+    "type":"function"
+  },
+  {
+    "inputs":[{"internalType":"uint256","name":"_id","type":"uint256"}],
+    "name":"getArtwork",
+    "outputs":[
+      {"components":[
+        {"internalType":"uint256","name":"id","type":"uint256"},
+        {"internalType":"string","name":"title","type":"string"},
+        {"internalType":"string","name":"artist","type":"string"},
+        {"internalType":"string","name":"description","type":"string"},
+        {"internalType":"string","name":"imageHash","type":"string"},
+        {"internalType":"uint256","name":"likes","type":"uint256"},
+        {"internalType":"address","name":"owner","type":"address"}
+      ],
+      "internalType":"struct ZenArt.Artwork","name":"","type":"tuple"}
+    ],
+    "stateMutability":"view",
+    "type":"function"
+  },
+  {
+    "inputs":[{"internalType":"uint256","name":"_id","type":"uint256"}],
+    "name":"likeArtwork",
+    "outputs":[],
+    "stateMutability":"nonpayable",
+    "type":"function"
+  },
+  {
+    "inputs":[],
+    "name":"artworkCount",
+    "outputs":[{"internalType":"uint256","name":"","type":"uint256"}],
+    "stateMutability":"view",
+    "type":"function"
+  }
+];
 
-/* --------- Wallet & Network --------- */
-async function connectWallet() {
+// ---------------------------
+// Connect to MetaMask and network
+// ---------------------------
+document.getElementById("connectWallet").onclick = async () => {
   if (!window.ethereum) {
-    alert("Please install MetaMask to use this DApp.");
+    alert("Please install MetaMask!");
     return;
   }
 
   try {
-    provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-
-    // ensure correct network: try to switch; if not present, add
-    const currentChainId = await window.ethereum.request({ method: "eth_chainId" });
-    if (currentChainId !== ZENCHAIN_PARAMS.chainId) {
-      try {
-        await window.ethereum.request({
-          method: "wallet_switchEthereumChain",
-          params: [{ chainId: ZENCHAIN_PARAMS.chainId }]
-        });
-      } catch (switchError) {
-        // 4902 -> chain not added
-        if (switchError.code === 4902) {
-          await window.ethereum.request({
-            method: "wallet_addEthereumChain",
-            params: [ZENCHAIN_PARAMS]
-          });
-        } else {
-          throw switchError;
-        }
-      }
-    }
-
-    // request accounts
-    await provider.send("eth_requestAccounts", []);
+    // Request account access
+    await ethereum.request({ method: 'eth_requestAccounts' });
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
     signer = provider.getSigner();
-    const address = await signer.getAddress();
-    document.getElementById("walletAddress").innerText = "Wallet: " + address;
 
-    // show balance
-    await updateBalance();
-
-    // Watch for account or network changes
-    window.ethereum.on("accountsChanged", handleAccountsChanged);
-    window.ethereum.on("chainChanged", handleChainChanged);
-
-    showStatus("Wallet connected");
-  } catch (err) {
-    console.error("connectWallet error:", err);
-    alert("Failed to connect or switch network: " + (err.message || err));
-  }
-}
-
-function handleAccountsChanged(accounts) {
-  if (!accounts || accounts.length === 0) {
-    document.getElementById("walletAddress").innerText = "Wallet: Not connected";
-    document.getElementById("balance").innerText = "Balance: -";
-    signer = null;
-    provider = null;
-    showStatus("Wallet disconnected");
-  } else {
-    // refresh display
-    connectWallet().catch(console.error);
-  }
-}
-
-function handleChainChanged(chainId) {
-  // reload to reinitialize provider network-sensitive data
-  console.log("chain changed to", chainId);
-  connectWallet().catch(console.error);
-}
-
-/* --------- Balance --------- */
-async function updateBalance() {
-  try {
-    const address = await signer.getAddress();
-    const bal = await provider.getBalance(address);
-    document.getElementById("balance").innerText = "Balance: " + ethers.utils.formatEther(bal) + " ZTC";
-  } catch (err) {
-    console.error("updateBalance error:", err);
-    document.getElementById("balance").innerText = "Balance: -";
-  }
-}
-
-/* --------- Send transaction --------- */
-async function sendTransaction() {
-  if (!signer) {
-    alert("Connect your wallet first");
-    return;
-  }
-
-  const to = document.getElementById("toAddress").value.trim();
-  const amountStr = document.getElementById("amount").value.trim();
-
-  if (!to || !amountStr) {
-    alert("Please enter recipient address and amount");
-    return;
-  }
-
-  // validate amount is positive number
-  const amountNum = Number(amountStr);
-  if (isNaN(amountNum) || amountNum <= 0) {
-    alert("Invalid amount");
-    return;
-  }
-
-  // small safety limit for micro payments (optional)
-  if (amountNum > 10) {
-    if (!confirm("You are sending a relatively large amount (> 10 ZTC). Proceed?")) {
-      return;
-    }
-  }
-
-  try {
-    showStatus("Sending transaction... (confirm in MetaMask)");
-
-    const txResponse = await signer.sendTransaction({
-      to: to,
-      value: ethers.utils.parseEther(amountStr)
-    });
-
-    // store to local history immediately as pending
-    const record = {
-      time: new Date().toISOString(),
-      to,
-      amount: amountStr,
-      hash: txResponse.hash,
-      status: "pending"
-    };
-    saveHistoryRecord(record);
-    addRowToTable(record);
-    showStatus("Transaction sent. Hash: " + txResponse.hash);
-
-    // update balance (optimistic)
-    setTimeout(updateBalance, 2500);
-
-    // wait for receipt in background (non-blocking)
-    provider.waitForTransaction(txResponse.hash, 1, 60000).then(receipt => {
-      if (receipt && receipt.confirmations && receipt.confirmations > 0) {
-        updateHistoryStatus(txResponse.hash, "confirmed");
-        showStatus("Transaction confirmed: " + txResponse.hash);
-      } else {
-        updateHistoryStatus(txResponse.hash, "unknown");
-      }
-      updateBalance().catch(console.error);
-    }).catch(err => {
-      console.log("waitForTransaction error:", err);
-      // keep as pending; user can refresh status manually
-    });
-
-  } catch (err) {
-    console.error("sendTransaction error:", err);
-    showStatus("Error: " + (err.message || err));
-  }
-}
-
-/* --------- Local history (localStorage) --------- */
-function loadHistory() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const arr = JSON.parse(raw);
-    return Array.isArray(arr) ? arr : [];
-  } catch (e) {
-    console.error("loadHistory parse error", e);
-    return [];
-  }
-}
-
-function saveHistory(arr) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr || []));
-}
-
-function saveHistoryRecord(rec) {
-  const hist = loadHistory();
-  hist.unshift(rec); // newest first
-  saveHistory(hist);
-}
-
-function clearLocalHistory() {
-  if (!confirm("Clear local transaction history? This cannot be undone.")) return;
-  localStorage.removeItem(STORAGE_KEY);
-  loadHistoryToTable();
-}
-
-/* --------- Render table --------- */
-function loadHistoryToTable() {
-  const tbody = document.querySelector("#historyTable tbody");
-  tbody.innerHTML = "";
-  const hist = loadHistory();
-  hist.forEach(addRowToTable);
-}
-
-function addRowToTable(rec) {
-  const tbody = document.querySelector("#historyTable tbody");
-  const tr = document.createElement("tr");
-
-  const timeTd = document.createElement("td");
-  timeTd.textContent = (new Date(rec.time)).toLocaleString();
-
-  const toTd = document.createElement("td");
-  toTd.textContent = rec.to;
-
-  const amountTd = document.createElement("td");
-  amountTd.textContent = rec.amount;
-
-  const hashTd = document.createElement("td");
-  const short = rec.hash ? (rec.hash.slice(0, 8) + "..." + rec.hash.slice(-6)) : "-";
-  if (rec.hash) {
-    const a = document.createElement("a");
-    a.href = "#";
-    a.textContent = short;
-    a.onclick = (e) => {
-      e.preventDefault();
-      // open in explorer if provided, else show full hash in alert
-      if (ZENCHAIN_PARAMS.blockExplorerUrls && ZENCHAIN_PARAMS.blockExplorerUrls.length > 0) {
-        const url = ZENCHAIN_PARAMS.blockExplorerUrls[0] + "/tx/" + rec.hash;
-        window.open(url, "_blank");
-      } else {
-        alert("Tx hash:\n" + rec.hash);
-      }
-    };
-    hashTd.appendChild(a);
-  } else {
-    hashTd.textContent = "-";
-  }
-
-  const statusTd = document.createElement("td");
-  statusTd.textContent = rec.status || "unknown";
-  statusTd.dataset.hash = rec.hash || "";
-
-  tr.appendChild(timeTd);
-  tr.appendChild(toTd);
-  tr.appendChild(amountTd);
-  tr.appendChild(hashTd);
-  tr.appendChild(statusTd);
-
-  // prepend row
-  const first = tbody.firstChild;
-  if (first) tbody.insertBefore(tr, first);
-  else tbody.appendChild(tr);
-}
-
-/* --------- Update statuses --------- */
-async function refreshAllStatuses() {
-  showStatus("Refreshing statuses...");
-  await pollPendingTransactions();
-  showStatus("Status refresh complete");
-}
-
-async function pollPendingTransactions() {
-  try {
-    const hist = loadHistory();
-    if (!hist.length || !provider) {
-      // nothing to do
-      return;
-    }
-
-    let changed = false;
-    for (let i = 0; i < hist.length; i++) {
-      const r = hist[i];
-      if (!r.hash) continue;
-      // skip already confirmed
-      if (r.status === "confirmed") continue;
-
+    // Check current network
+    const chainId = await ethereum.request({ method: 'eth_chainId' });
+    if (chainId !== network.chainId) {
       try {
-        const receipt = await provider.getTransactionReceipt(r.hash);
-        if (receipt && receipt.confirmations && receipt.confirmations > 0) {
-          hist[i].status = "confirmed";
-          changed = true;
-        } else if (receipt && receipt.status === 0) {
-          hist[i].status = "failed";
-          changed = true;
-        } else {
-          // still pending; leave as-is
-        }
-      } catch (err) {
-        console.log("getTransactionReceipt error for", r.hash, err);
+        // Add ZenChain Testnet if not present
+        await ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [network]
+        });
+      } catch (addError) {
+        console.error("Error adding network:", addError);
+        return;
       }
     }
 
-    if (changed) {
-      saveHistory(hist);
-      // re-render table
-      loadHistoryToTable();
-    }
+    contract = new ethers.Contract(contractAddress, contractABI, signer);
+    alert("Wallet connected and ZenChain Testnet selected!");
+    loadArtworks();
   } catch (err) {
-    console.error("pollPendingTransactions error:", err);
+    console.error(err);
+    alert("Error connecting wallet or network");
+  }
+};
+
+// ---------------------------
+// Register new artwork
+// ---------------------------
+document.getElementById("artForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const title = document.getElementById("title").value;
+  const artist = document.getElementById("artist").value;
+  const description = document.getElementById("description").value;
+  const imageHash = document.getElementById("imageHash").value;
+
+  try {
+    const tx = await contract.createArtwork(title, artist, description, imageHash);
+    await tx.wait();
+    alert("Artwork registered successfully!");
+    loadArtworks();
+  } catch (err) {
+    console.error(err);
+    alert("Error registering artwork");
+  }
+};
+
+// ---------------------------
+// Like an artwork
+// ---------------------------
+async function likeArtwork(id) {
+  try {
+    const tx = await contract.likeArtwork(id);
+    await tx.wait();
+    alert("Artwork liked! #" + id);
+    loadArtworks();
+  } catch (err) {
+    console.error(err);
+    alert("Error liking artwork");
   }
 }
 
-function updateHistoryStatus(hash, newStatus) {
-  const hist = loadHistory();
-  let changed = false;
-  for (let i = 0; i < hist.length; i++) {
-    if (hist[i].hash === hash) {
-      hist[i].status = newStatus;
-      changed = true;
-      break;
-    }
-  }
-  if (changed) {
-    saveHistory(hist);
-    loadHistoryToTable();
-  }
-}
+// ---------------------------
+// Load artworks and chart
+// ---------------------------
+async function loadArtworks() {
+  const artworksDiv = document.getElementById("artworks");
+  artworksDiv.innerHTML = "";
 
-/* --------- UI helper --------- */
-function showStatus(text) {
-  const el = document.getElementById("status");
-  el.innerText = text || "";
+  const count = await contract.artworkCount();
+  let labels = [];
+  let data = [];
+
+  for (let i = 0; i < count; i++) {
+    const art = await contract.getArtwork(i);
+    const div = document.createElement("div");
+    div.className = "art-card";
+    div.innerHTML = `
+      <h3>${art.title}</h3>
+      <p><b>Artist:</b> ${art.artist}</p>
+      <p>${art.description}</p>
+      <img src="https://ipfs.io/ipfs/${art.imageHash}" alt="Artwork"/>
+      <p>Likes: ${art.likes}</p>
+      <button onclick="likeArtwork(${art.id})">❤️ Like</button>
+    `;
+    artworksDiv.appendChild(div);
+
+    labels.push(art.title);
+    data.push(parseInt(art.likes));
+  }
+
+  const ctx = document.getElementById("likesChart").getContext("2d");
+  new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Likes",
+        data: data,
+        backgroundColor: "rgba(46,139,87,0.7)"
+      }]
     }
+  });
+}
