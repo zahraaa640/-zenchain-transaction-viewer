@@ -1,56 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>ZenChain Micro Payments (Testnet)</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ZenArt – Powered by ZenChain</title>
+  <link rel="stylesheet" href="style.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <div class="container">
-    <h1>ZenChain Micro Payments (Testnet)</h1>
+  <header>
+    <h1>🎨 ZenArt – Powered by ZenChain</h1>
+    <button id="connectWallet">Connect Wallet</button>
+  </header>
 
-    <div class="wallet-row">
-      <button id="connectBtn">Connect Wallet</button>
-      <div class="wallet-info">
-        <p id="walletAddress">Wallet: Not connected</p>
-        <p id="balance">Balance: -</p>
-      </div>
-    </div>
-
-    <section class="send-box">
-      <h2>Send Micro Payment</h2>
-      <label>Recipient address</label>
-      <input type="text" id="toAddress" placeholder="0x..." />
-      <label>Amount (ZTC)</label>
-      <input type="text" id="amount" placeholder="e.g. 0.001" />
-      <div class="small-note">Tip: keep amount small (micro payments)</div>
-      <button id="sendBtn">Send Payment</button>
-      <p id="status" class="status"></p>
+  <main>
+    <!-- Artwork registration form -->
+    <section id="register">
+      <h2>Register Artwork</h2>
+      <form id="artForm">
+        <input type="text" id="title" placeholder="Artwork Title" required/>
+        <input type="text" id="artist" placeholder="Artist Name" required/>
+        <textarea id="description" placeholder="Description" required></textarea>
+        <input type="text" id="imageHash" placeholder="IPFS Image Hash" required/>
+        <button type="submit">Register</button>
+      </form>
     </section>
 
-    <section class="history-box">
-      <h2>Transaction History (local)</h2>
-      <div class="history-controls">
-        <button id="refreshBtn">Refresh Status</button>
-        <button id="clearBtn">Clear Local History</button>
-      </div>
-      <table id="historyTable">
-        <thead>
-          <tr><th>Time</th><th>To</th><th>Amount (ZTC)</th><th>Tx Hash</th><th>Status</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <div class="note">
-        History is kept in your browser (localStorage). You can view details on a block explorer if available.
-      </div>
+    <!-- Gallery -->
+    <section id="gallery">
+      <h2>Gallery</h2>
+      <div id="artworks"></div>
     </section>
 
-    <footer>
-      <small>ZenChain Testnet — RPC: <code>https://zenchain-testnet.api.onfinality.io/public</code></small>
-    </footer>
-  </div>
+    <!-- Recent transactions -->
+    <section id="transactions">
+      <h2>Recent Transactions</h2>
+      <ul id="txList"></ul>
+    </section>
+
+    <!-- Chart for popularity -->
+    <section id="chartSection">
+      <h2>Most Popular Artworks</h2>
+      <canvas id="likesChart"></canvas>
+    </section>
+  </main>
 
   <script src="app.js"></script>
 </body>
