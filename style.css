@@ -74,3 +74,8 @@ section {
   border-radius: 6px;
   cursor: pointer;
 }
+
+#walletNotice {
+  color: #555;
+  font-size: 0.9em;
+}
