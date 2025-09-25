@@ -10,7 +10,7 @@ const network = {
   blockExplorerUrls: []
 };
 
-// Replace this with your actual deployed contract address
+// Replace with your deployed contract address
 const contractAddress = "0xYourDeployedContractAddressHere";
 
 // ZenArt contract ABI
@@ -61,17 +61,19 @@ const contractABI = [
   }
 ];
 
-// Connect to MetaMask and ZenChain Testnet
+// Provider for public view (no wallet needed)
+const provider = new ethers.providers.JsonRpcProvider(network.rpcUrls[0]);
+const publicContract = new ethers.Contract(contractAddress, contractABI, provider);
+
+// Wallet connection
 document.getElementById("connectWallet").onclick = async () => {
   if (!window.ethereum) {
     alert("Please install MetaMask!");
     return;
   }
-
   try {
     await ethereum.request({ method: 'eth_requestAccounts' });
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    signer = provider.getSigner();
+    signer = new ethers.providers.Web3Provider(window.ethereum).getSigner();
 
     const chainId = await ethereum.request({ method: 'eth_chainId' });
     if (chainId !== network.chainId) {
@@ -87,17 +89,21 @@ document.getElementById("connectWallet").onclick = async () => {
     }
 
     contract = new ethers.Contract(contractAddress, contractABI, signer);
-    alert("Wallet connected and ZenChain Testnet selected!");
-    loadArtworks();
+    alert("Wallet connected! You can now register artworks or like them.");
+    document.getElementById("walletNotice").style.display = "none";
   } catch (err) {
     console.error(err);
-    alert("Error connecting wallet or network");
+    alert("Error connecting wallet");
   }
 };
 
 // Register artwork
 document.getElementById("artForm").onsubmit = async (e) => {
   e.preventDefault();
+  if (!contract) {
+    alert("Connect your wallet first!");
+    return;
+  }
   const title = document.getElementById("title").value;
   const artist = document.getElementById("artist").value;
   const description = document.getElementById("description").value;
@@ -116,6 +122,10 @@ document.getElementById("artForm").onsubmit = async (e) => {
 
 // Like artwork
 async function likeArtwork(id) {
+  if (!contract) {
+    alert("Connect your wallet first!");
+    return;
+  }
   try {
     const tx = await contract.likeArtwork(id);
     await tx.wait();
@@ -132,21 +142,22 @@ async function loadArtworks() {
   const artworksDiv = document.getElementById("artworks");
   artworksDiv.innerHTML = "";
 
-  const count = await contract.artworkCount();
+  const count = await publicContract.artworkCount();
   let labels = [];
   let data = [];
 
   for (let i = 0; i < count; i++) {
-    const art = await contract.getArtwork(i);
+    const art = await publicContract.getArtwork(i);
     const div = document.createElement("div");
     div.className = "art-card";
+    let likeButton = `<button onclick="likeArtwork(${art.id})" ${!contract ? 'disabled' : ''}>❤️ Like</button>`;
     div.innerHTML = `
       <h3>${art.title}</h3>
       <p><b>Artist:</b> ${art.artist}</p>
       <p>${art.description}</p>
       <img src="https://ipfs.io/ipfs/${art.imageHash}" alt="Artwork"/>
       <p>Likes: ${art.likes}</p>
-      <button onclick="likeArtwork(${art.id})">❤️ Like</button>
+      ${likeButton}
     `;
     artworksDiv.appendChild(div);
 
@@ -167,3 +178,6 @@ async function loadArtworks() {
     }
   });
 }
+
+// Initial load
+loadArtworks();
