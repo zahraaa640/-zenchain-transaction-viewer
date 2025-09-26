@@ -10,10 +10,10 @@ const network = {
   blockExplorerUrls: []
 };
 
-// Replace with your deployed contract address
-const contractAddress = "0xYourDeployedContractAddressHere";
+// ✅ آدرس قرارداد دیپلوی‌شده
+const contractAddress = "0xA35f5C4bc858F5cA918f78Bc22290472709E8639";
 
-// ZenArt contract ABI
+// ✅ ABI هماهنگ با توابع سایت
 const contractABI = [
   {
     "inputs":[
@@ -137,47 +137,4 @@ async function likeArtwork(id) {
   }
 }
 
-// Load artworks and chart
-async function loadArtworks() {
-  const artworksDiv = document.getElementById("artworks");
-  artworksDiv.innerHTML = "";
-
-  const count = await publicContract.artworkCount();
-  let labels = [];
-  let data = [];
-
-  for (let i = 0; i < count; i++) {
-    const art = await publicContract.getArtwork(i);
-    const div = document.createElement("div");
-    div.className = "art-card";
-    let likeButton = `<button onclick="likeArtwork(${art.id})" ${!contract ? 'disabled' : ''}>❤️ Like</button>`;
-    div.innerHTML = `
-      <h3>${art.title}</h3>
-      <p><b>Artist:</b> ${art.artist}</p>
-      <p>${art.description}</p>
-      <img src="https://ipfs.io/ipfs/${art.imageHash}" alt="Artwork"/>
-      <p>Likes: ${art.likes}</p>
-      ${likeButton}
-    `;
-    artworksDiv.appendChild(div);
-
-    labels.push(art.title);
-    data.push(parseInt(art.likes));
-  }
-
-  const ctx = document.getElementById("likesChart").getContext("2d");
-  new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: labels,
-      datasets: [{
-        label: "Likes",
-        data: data,
-        backgroundColor: "rgba(46,139,87,0.7)"
-      }]
-    }
-  });
-}
-
-// Initial load
-loadArtworks();
+// Load
