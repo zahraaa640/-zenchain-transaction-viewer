@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ZenArt – Powered by ZenChain</title>
+  <link rel="stylesheet" href="./style.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header>
+    <h1>🎨 ZenArt – Powered by ZenChain</h1>
+    <button id="connectWallet">Connect Wallet</button>
+  </header>
+
+  <main>
+    <!-- Artwork registration form -->
+    <section id="register">
+      <h2>Register Artwork</h2>
+      <form id="artForm">
+        <input type="text" id="title" placeholder="Artwork Title" required/>
+        <input type="text" id="artist" placeholder="Artist Name" required/>
+        <textarea id="description" placeholder="Description" required></textarea>
+        <input type="text" id="imageHash" placeholder="IPFS Image Hash (e.g., Qm...)" required/>
+        <button type="submit">Register</button>
+      </form>
+      <p id="walletNotice">Connect wallet to register artwork or like.</p>
+    </section>
+
+    <!-- Gallery -->
+    <section id="gallery">
+      <h2>Gallery</h2>
+      <div id="artworks"></div>
+    </section>
+
+    <!-- Chart for popularity -->
+    <section id="chartSection">
+      <h2>Most Popular Artworks</h2>
+      <canvas id="likesChart"></canvas>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
