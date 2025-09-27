@@ -29,6 +29,10 @@ header button {
   font-weight: bold;
 }
 
+header button:hover {
+  background: #f0f0f0;
+}
+
 section {
   padding: 20px;
   margin: 15px;
@@ -46,9 +50,20 @@ section {
   border-radius: 6px;
 }
 
+#artForm button {
+  background: #2e8b57;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+#artForm button:hover {
+  background: #257a4d;
+}
+
 #artworks {
   display: grid;
-  grid-template-columns: repeat(auto-fill,minmax(200px,1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 15px;
 }
 
@@ -62,7 +77,9 @@ section {
 
 .art-card img {
   max-width: 100%;
+  max-height: 150px;
   border-radius: 6px;
+  object-fit: cover;
 }
 
 .art-card button {
@@ -75,7 +92,33 @@ section {
   cursor: pointer;
 }
 
+.art-card button:hover {
+  background: #257a4d;
+}
+
+.art-card button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
 #walletNotice {
   color: #555;
   font-size: 0.9em;
+  text-align: center;
+}
+
+#artworks p {
+  text-align: center;
+  color: #555;
+  font-size: 1.1em;
+  margin: 20px 0;
+}
+
+@media (max-width: 600px) {
+  #artworks {
+    grid-template-columns: 1fr;
+  }
+  .art-card {
+    padding: 8px;
+  }
 }
